@@ -3,10 +3,11 @@ const express = require("express");
 const router = express.Router();
 const _ = require("lodash");
 const { Users, schema: userSchema } = require("../model/users");
+const bcrypt = require("bcrypt");
 
 const schema = Joi.object({
   email: Joi.string().email().min(5).max(50).required(),
-  password: Joi.string().min(6).max(20).required(),
+  password: Joi.string().min(6).max(250).required(),
   name: Joi.string().min(6).max(50).required(),
 });
 
@@ -17,16 +18,21 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
+  const user = new Users({
+    email: req.body.email,
+    password: req.body.password,
+    name: req.body.name,
+  });
+  const userExist = await Users.findOne({ email: req.body.email });
+  if (userExist) return res.status(400).send("User already exist");
+
   const { error } = schema.validate(req.body);
   if (error) return res.send(error.details[0].message).status(400);
 
-  const user = new Users({
-    email: req.body.email,
-    password: req.body.email,
-    name: req.body.name,
-  });
-  await user.save();
-  res.send(user);
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(req.body.password, salt);
+  const result = await user.save();
+  res.send(result);
 });
 
 module.exports = router;
