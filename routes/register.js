@@ -32,7 +32,10 @@ router.post("/", async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(req.body.password, salt);
   const result = await user.save();
-  res.send(result);
+
+  const token = await jwt.sign({ ...picked }, "jwtPrivateKey");
+
+  res.header("x-auth-token", token).send(result);
 });
 
 module.exports = router;

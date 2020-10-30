@@ -5,6 +5,7 @@ const Joi = require("Joi");
 const bcrypt = require("bcrypt");
 const _ = require("lodash");
 const { pick } = require("lodash");
+const jwt = require("jsonwebtoken");
 
 const schema = Joi.object({
   email: Joi.string().email().required(),
@@ -25,7 +26,9 @@ router.post("/", async (req, res) => {
 
   const picked = _.pick(user, ["name", "email", "_id"]);
 
-  res.send("Welcome" + picked.name);
+  const token = await jwt.sign({ ...picked }, "jwtPrivateKey");
+
+  res.header("x-auth-token", token).send(`Welcome ${picked.name}`);
 });
 
 module.exports = router;
